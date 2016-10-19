@@ -7,14 +7,14 @@ using System.Reflection.Emit;
 namespace Generator
 {
 
-    public static class PropertyChangedInvoker
+public static class PropertyChangedInvoker
+{
+    public static void Invoke(INotifyPropertyChanged sender,
+        PropertyChangedEventHandler source, string propertyName)
     {
-        public static void Invoke(INotifyPropertyChanged sender,
-            PropertyChangedEventHandler source, string propertyName)
-        {
-            source?.Invoke(sender, new PropertyChangedEventArgs(propertyName));
-        }
+        source?.Invoke(sender, new PropertyChangedEventArgs(propertyName));
     }
+}
 
     public static class GenerateProxy
     {

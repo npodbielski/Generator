@@ -6,9 +6,9 @@ using System.Reflection.Emit;
 
 namespace Generator
 {
-    public static class GenerateProxy
+    public static class ProxyGenerator
     {
-        public static T ProxyOf<T>() where T : class, new()
+        public static T PropertyChangedProxy<T>() where T : class, new()
         {
             var type = typeof(T);
             var assemblyName = type.FullName + "_Proxy";

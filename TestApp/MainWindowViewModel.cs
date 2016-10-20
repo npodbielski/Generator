@@ -19,7 +19,7 @@ namespace TestApp
 
         public MainWindowViewModel()
         {
-            var test = GenerateProxy.ProxyOf<MainModel>();
+            var test = ProxyGenerator.PropertyChangedProxy<MainModel>();
             Model = test;
             test.IntValue = 2;
         }

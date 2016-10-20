@@ -8,8 +8,8 @@ namespace Service
     {
         [OperationContract]
         [WebInvoke(Method = "POST",
-             RequestFormat = WebMessageFormat.Json,
-             ResponseFormat = WebMessageFormat.Json)]
+                RequestFormat = WebMessageFormat.Json,
+                ResponseFormat = WebMessageFormat.Json)]
         int Add(AddRequest req);
 
         [OperationContract]

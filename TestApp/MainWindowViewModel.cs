@@ -54,7 +54,6 @@ namespace TestApp
             {
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                //client
                 var addRequest = new AddRequest
                 {
                     FirstNumber = First,
@@ -63,17 +62,16 @@ namespace TestApp
                 var serializeObject = JsonConvert.SerializeObject(addRequest);
                 var call = client.PostAsync("http://localhost:8081/add",
                     new StringContent(serializeObject, Encoding.UTF8, "application/json"));
-                
+
                 try
                 {
                     call.Wait();
+                    var result = call.Result.Content;
+                    Sum = (int)JsonConvert.DeserializeObject(result.ReadAsStringAsync().Result, typeof(int));
                 }
                 catch (System.Exception)
                 {
-                    throw;
                 }
-                var result = call.Result.Content;
-                Sum = Convert.ToInt32(JsonConvert.DeserializeObject(result.ReadAsStringAsync().Result));
             }
         }
 

@@ -1,8 +1,5 @@
-﻿using System.ServiceModel;
-
-namespace Service
+﻿namespace Service
 {
-    [ServiceBehavior(AddressFilterMode = AddressFilterMode.Any)]
     public class Service : IService
     {
         public int Add(AddRequest req)

@@ -6,16 +6,6 @@ using System.Reflection.Emit;
 
 namespace Generator
 {
-
-    public static class PropertyChangedInvoker
-    {
-        public static void Invoke(INotifyPropertyChanged sender,
-            PropertyChangedEventHandler source, string propertyName)
-        {
-            source?.Invoke(sender, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-    
     public static class GenerateProxy
     {
         public static T ProxyOf<T>() where T : class, new()

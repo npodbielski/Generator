@@ -3,21 +3,43 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:testApp="clr-namespace:TestApp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="350" Width="525" d:DataContext="{d:DesignInstance testApp:MainWindowViewModel}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-            <TextBlock Text="{Binding Model.IntValue}"></TextBlock>
-        </StackPanel>
-        <StackPanel Grid.Row="1" 
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Row="0" Grid.Column="0"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
-            <Button Command="{Binding Increment}" Content="Increment" Padding="10"></Button>
+            <TextBlock Text="{Binding Model.IntValue}" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="0" 
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <Button Command="{Binding Increment}" Content="Increment" Padding="10" />
+        </StackPanel>
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal">
+                <TextBox x:Name="First" Width="100" Text="{Binding First}" />
+                <TextBox x:Name="Second" Width="100" Text="{Binding Second}" />
+            </StackPanel>
+            <TextBlock x:Name="Sum" Text="{Binding Sum}" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="1" 
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <Button Command="{Binding CallService}" 
+                    Content="Call" Padding="10" />
         </StackPanel>
     </Grid>
 </Window>
+

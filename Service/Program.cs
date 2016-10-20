@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Description;
-using System.Text;
-using System.Threading.Tasks;
+using System.ServiceModel.Web;
 
 namespace Service
 {
@@ -12,16 +9,18 @@ namespace Service
     {
         static void Main(string[] args)
         {
-            var uri = new Uri("http://localhost:8081/service");
-            var serviceHost = new ServiceHost(typeof(Service), uri);
+            var serviceHost = new ServiceHost(typeof(Service), new Uri("http://localhost:8081"));
             using (serviceHost)
             {
-                var smb = new ServiceMetadataBehavior
+                var seb = new WebHttpBehavior
                 {
-                    HttpGetEnabled = true,
-                    MetadataExporter = {PolicyVersion = PolicyVersion.Policy15}
+                    DefaultOutgoingRequestFormat = WebMessageFormat.Json,
+                    DefaultOutgoingResponseFormat = WebMessageFormat.Json,
+                    FaultExceptionEnabled = true
                 };
-                serviceHost.Description.Behaviors.Add(smb);
+                serviceHost.Description.Behaviors.Add(new ServiceMetadataBehavior { HttpGetEnabled = true });
+                var e = serviceHost.AddServiceEndpoint(typeof(IService), new WebHttpBinding(), "");
+                e.Behaviors.Add(seb);
                 serviceHost.Open();
                 Console.WriteLine("Service ready...");
                 Console.ReadLine();

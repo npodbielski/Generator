@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
@@ -9,73 +10,11 @@ using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace Generator
 {
     public static class ProxyGenerator
     {
-        public static T ServiceProxy<T>(string baseUrl) where T : class
-        {
-            var serviceInterface = typeof(T);
-            if (serviceInterface.IsInterface)
-            {
-                var assemblyName = serviceInterface.FullName + "_Proxy";
-                var fileName = assemblyName + ".dll";
-                var name = new AssemblyName(assemblyName);
-                var assembly = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
-                var module = assembly.DefineDynamicModule(assemblyName, fileName);
-                var implemntationName = serviceInterface.Name.StartsWith("I") ?
-                    serviceInterface.Name.Substring(1) : serviceInterface.Name;
-                var typeBuilder = module.DefineType(implemntationName + "Proxy",
-                    TypeAttributes.Class | TypeAttributes.Public);
-                typeBuilder.AddInterfaceImplementation(serviceInterface);
-                foreach (var method in serviceInterface.GetMethods().Where(m => !m.IsSpecialName))
-                {
-                    var customAttributes = method.GetCustomAttributes<OperationContractAttribute>()
-                        .SingleOrDefault();
-                    if (customAttributes != null)
-                    {
-                        var webInvokeAttr = method.GetCustomAttribute<WebInvokeAttribute>();
-                        var webGetAttr = method.GetCustomAttribute<WebGetAttribute>();
-                        ImplementServiceMethod(baseUrl, typeBuilder, method, webInvokeAttr, webGetAttr);
-                    }
-                    else
-                    {
-                        throw new Exception("Service interface has to be marked with correct method attribute!");
-                    }
-                }
-                var type = typeBuilder.CreateType();
-                assembly.Save(assemblyName);
-                return (T)Activator.CreateInstance(type);
-            }
-            return null;
-        }
-
-        private static void ImplementServiceMethod(string baseUrl, TypeBuilder typeBuilder, MethodInfo method,
-            WebInvokeAttribute webInvokeAttr, WebGetAttribute webGetAttr)
-        {
-            var parameterTypes = method.GetParameters().Select(p => p.ParameterType).ToArray();
-            var methodBuilder = typeBuilder.DefineMethod(method.Name, method.Attributes ^ MethodAttributes.Abstract,
-                 method.CallingConvention, method.ReturnType,
-                 parameterTypes);
-            var il = methodBuilder.GetILGenerator();
-            var serviceCallMethod = typeof(ProxyGenerator).GetMethod("BaseServiceCall",
-                BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(parameterTypes[0], method.ReturnType);
-
-            var url = baseUrl;
-            if (webGetAttr != null)
-            {
-                url = baseUrl + "?" + parameterTypes[0].Name + "=";
-            }
-
-            il.Emit(OpCodes.Ldstr, url);
-            il.Emit(OpCodes.Ldstr, webGetAttr != null ? "GET" : "POST");
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Call, serviceCallMethod);
-            il.Emit(OpCodes.Ret);
-        }
-
         public static TReturn BaseServiceCall<TParam, TReturn>(string url, string method, TParam param)
         {
             using (var client = new HttpClient(new HttpClientHandler()))
@@ -137,38 +76,41 @@ namespace Generator
             return Activator.CreateInstance(t) as T;
         }
 
-        private static MethodBuilder ImplementPropertyChanged(TypeBuilder typeBuilder)
+        public static T ServiceProxy<T>(string baseUrl) where T : class
         {
-            typeBuilder.AddInterfaceImplementation(typeof(INotifyPropertyChanged));
-            var field = typeBuilder.DefineField("PropertyChanged", typeof(PropertyChangedEventHandler), FieldAttributes.Private);
-            var eventInfo = typeBuilder.DefineEvent("PropertyChanged", EventAttributes.None, typeof(PropertyChangedEventHandler));
-            //var methodBuilder = ImplementOnPropertyChangedHelper(typeBuilder, field, eventInfo);
-            var methodBuilder = ImplementOnPropertyChanged(typeBuilder, field, eventInfo);
-            ImplementAddEvent(typeBuilder, field, eventInfo);
-            ImplementRemoveEvent(typeBuilder, field, eventInfo);
-            return methodBuilder;
-        }
-
-
-        private static void ImplementRemoveEvent(TypeBuilder typeBuilder, FieldBuilder field, EventBuilder eventInfo)
-        {
-            var ibaseMethod = typeof(INotifyPropertyChanged).GetMethod("remove_PropertyChanged");
-            var removeMethod = typeBuilder.DefineMethod("remove_PropertyChanged",
-                ibaseMethod.Attributes ^ MethodAttributes.Abstract,
-                ibaseMethod.CallingConvention,
-                ibaseMethod.ReturnType,
-                new[] { typeof(PropertyChangedEventHandler) });
-            var remove = typeof(Delegate).GetMethod("Remove", new[] { typeof(Delegate), typeof(Delegate) });
-            var generator = removeMethod.GetILGenerator();
-            generator.Emit(OpCodes.Ldarg_0);
-            generator.Emit(OpCodes.Ldarg_0);
-            generator.Emit(OpCodes.Ldfld, field);
-            generator.Emit(OpCodes.Ldarg_1);
-            generator.Emit(OpCodes.Call, remove);
-            generator.Emit(OpCodes.Castclass, typeof(PropertyChangedEventHandler));
-            generator.Emit(OpCodes.Stfld, field);
-            generator.Emit(OpCodes.Ret);
-            eventInfo.SetRemoveOnMethod(removeMethod);
+            var serviceInterface = typeof(T);
+            if (serviceInterface.IsInterface)
+            {
+                var assemblyName = serviceInterface.FullName + "_Proxy";
+                var fileName = assemblyName + ".dll";
+                var name = new AssemblyName(assemblyName);
+                var assembly = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
+                var module = assembly.DefineDynamicModule(assemblyName, fileName);
+                var implemntationName = serviceInterface.Name.StartsWith("I") ?
+                    serviceInterface.Name.Substring(1) : serviceInterface.Name;
+                var typeBuilder = module.DefineType(implemntationName + "Proxy",
+                    TypeAttributes.Class | TypeAttributes.Public);
+                typeBuilder.AddInterfaceImplementation(serviceInterface);
+                foreach (var method in serviceInterface.GetMethods().Where(m => !m.IsSpecialName))
+                {
+                    var customAttributes = method.GetCustomAttributes<OperationContractAttribute>()
+                        .SingleOrDefault();
+                    if (customAttributes != null)
+                    {
+                        var webInvokeAttr = method.GetCustomAttribute<WebInvokeAttribute>();
+                        var webGetAttr = method.GetCustomAttribute<WebGetAttribute>();
+                        ImplementServiceMethod(baseUrl, typeBuilder, method, webInvokeAttr, webGetAttr);
+                    }
+                    else
+                    {
+                        throw new Exception("Service interface has to be marked with correct method attribute!");
+                    }
+                }
+                var type = typeBuilder.CreateType();
+                assembly.Save(assemblyName);
+                return (T)Activator.CreateInstance(type);
+            }
+            return null;
         }
 
         private static void ImplementAddEvent(TypeBuilder typeBuilder, FieldBuilder field, EventBuilder eventInfo)
@@ -190,27 +132,6 @@ namespace Generator
             generator.Emit(OpCodes.Stfld, field);
             generator.Emit(OpCodes.Ret);
             eventInfo.SetAddOnMethod(addMethod);
-        }
-
-        private static MethodBuilder ImplementOnPropertyChangedHelper(TypeBuilder typeBuilder, FieldBuilder field,
-            EventBuilder eventInfo)
-        {
-            var methodBuilder = typeBuilder.DefineMethod("OnPropertyChanged",
-                MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig |
-                MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(void),
-                new[] { typeof(string) });
-            var generator = methodBuilder.GetILGenerator();
-            var returnLabel = generator.DefineLabel();
-            generator.DeclareLocal(typeof(PropertyChangedEventHandler));
-            generator.Emit(OpCodes.Ldarg_0);
-            generator.Emit(OpCodes.Ldarg_0);
-            generator.Emit(OpCodes.Ldfld, field);
-            generator.Emit(OpCodes.Ldarg_1);
-            generator.Emit(OpCodes.Call, typeof(PropertyChangedInvoker).GetMethod("Invoke"));
-            generator.MarkLabel(returnLabel);
-            generator.Emit(OpCodes.Ret);
-            eventInfo.SetRaiseMethod(methodBuilder);
-            return methodBuilder;
         }
 
         private static MethodBuilder ImplementOnPropertyChanged(TypeBuilder typeBuilder, FieldBuilder field,
@@ -238,6 +159,84 @@ namespace Generator
             generator.Emit(OpCodes.Ret);
             eventInfo.SetRaiseMethod(methodBuilder);
             return methodBuilder;
+        }
+
+        private static MethodBuilder ImplementOnPropertyChangedHelper(TypeBuilder typeBuilder, FieldBuilder field,
+            EventBuilder eventInfo)
+        {
+            var methodBuilder = typeBuilder.DefineMethod("OnPropertyChanged",
+                MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig |
+                MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(void),
+                new[] { typeof(string) });
+            var generator = methodBuilder.GetILGenerator();
+            var returnLabel = generator.DefineLabel();
+            generator.DeclareLocal(typeof(PropertyChangedEventHandler));
+            generator.Emit(OpCodes.Ldarg_0);
+            generator.Emit(OpCodes.Ldarg_0);
+            generator.Emit(OpCodes.Ldfld, field);
+            generator.Emit(OpCodes.Ldarg_1);
+            generator.Emit(OpCodes.Call, typeof(PropertyChangedInvoker).GetMethod("Invoke"));
+            generator.MarkLabel(returnLabel);
+            generator.Emit(OpCodes.Ret);
+            eventInfo.SetRaiseMethod(methodBuilder);
+            return methodBuilder;
+        }
+
+        private static MethodBuilder ImplementPropertyChanged(TypeBuilder typeBuilder)
+        {
+            typeBuilder.AddInterfaceImplementation(typeof(INotifyPropertyChanged));
+            var field = typeBuilder.DefineField("PropertyChanged", typeof(PropertyChangedEventHandler), FieldAttributes.Private);
+            var eventInfo = typeBuilder.DefineEvent("PropertyChanged", EventAttributes.None, typeof(PropertyChangedEventHandler));
+            //var methodBuilder = ImplementOnPropertyChangedHelper(typeBuilder, field, eventInfo);
+            var methodBuilder = ImplementOnPropertyChanged(typeBuilder, field, eventInfo);
+            ImplementAddEvent(typeBuilder, field, eventInfo);
+            ImplementRemoveEvent(typeBuilder, field, eventInfo);
+            return methodBuilder;
+        }
+
+        private static void ImplementRemoveEvent(TypeBuilder typeBuilder, FieldBuilder field, EventBuilder eventInfo)
+        {
+            var ibaseMethod = typeof(INotifyPropertyChanged).GetMethod("remove_PropertyChanged");
+            var removeMethod = typeBuilder.DefineMethod("remove_PropertyChanged",
+                ibaseMethod.Attributes ^ MethodAttributes.Abstract,
+                ibaseMethod.CallingConvention,
+                ibaseMethod.ReturnType,
+                new[] { typeof(PropertyChangedEventHandler) });
+            var remove = typeof(Delegate).GetMethod("Remove", new[] { typeof(Delegate), typeof(Delegate) });
+            var generator = removeMethod.GetILGenerator();
+            generator.Emit(OpCodes.Ldarg_0);
+            generator.Emit(OpCodes.Ldarg_0);
+            generator.Emit(OpCodes.Ldfld, field);
+            generator.Emit(OpCodes.Ldarg_1);
+            generator.Emit(OpCodes.Call, remove);
+            generator.Emit(OpCodes.Castclass, typeof(PropertyChangedEventHandler));
+            generator.Emit(OpCodes.Stfld, field);
+            generator.Emit(OpCodes.Ret);
+            eventInfo.SetRemoveOnMethod(removeMethod);
+        }
+
+        private static void ImplementServiceMethod(string baseUrl, TypeBuilder typeBuilder, MethodInfo method,
+                                                    WebInvokeAttribute webInvokeAttr, WebGetAttribute webGetAttr)
+        {
+            var parameterTypes = method.GetParameters().Select(p => p.ParameterType).ToArray();
+            var methodBuilder = typeBuilder.DefineMethod(method.Name, method.Attributes ^ MethodAttributes.Abstract,
+                 method.CallingConvention, method.ReturnType,
+                 parameterTypes);
+            var il = methodBuilder.GetILGenerator();
+            var serviceCallMethod = typeof(ProxyGenerator).GetMethod("BaseServiceCall",
+                BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(parameterTypes[0], method.ReturnType);
+
+            var url = new Uri(new Uri(baseUrl), method.Name).AbsoluteUri;
+            if (webGetAttr != null)
+            {
+                url = url + "?" + method.GetParameters()[0].Name + "=";
+            }
+
+            il.Emit(OpCodes.Ldstr, url);
+            il.Emit(OpCodes.Ldstr, webGetAttr != null ? "GET" : "POST");
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Call, serviceCallMethod);
+            il.Emit(OpCodes.Ret);
         }
     }
 }

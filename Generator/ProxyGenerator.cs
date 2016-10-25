@@ -1,13 +1,103 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.ServiceModel;
+using System.ServiceModel.Web;
+using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Generator
 {
     public static class ProxyGenerator
     {
+        public static T ServiceProxy<T>(string baseUrl) where T : class
+        {
+            var serviceInterface = typeof(T);
+            if (serviceInterface.IsInterface)
+            {
+                var assemblyName = serviceInterface.FullName + "_Proxy";
+                var fileName = assemblyName + ".dll";
+                var name = new AssemblyName(assemblyName);
+                var assembly = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
+                var module = assembly.DefineDynamicModule(assemblyName, fileName);
+                var implemntationName = serviceInterface.Name.StartsWith("I") ?
+                    serviceInterface.Name.Substring(1) : serviceInterface.Name;
+                var typeBuilder = module.DefineType(implemntationName + "Proxy",
+                    TypeAttributes.Class | TypeAttributes.Public);
+                typeBuilder.AddInterfaceImplementation(serviceInterface);
+                foreach (var method in serviceInterface.GetMethods().Where(m => !m.IsSpecialName))
+                {
+                    var customAttributes = method.GetCustomAttributes<OperationContractAttribute>()
+                        .SingleOrDefault();
+                    if (customAttributes != null)
+                    {
+                        var webInvokeAttr = method.GetCustomAttribute<WebInvokeAttribute>();
+                        var webGetAttr = method.GetCustomAttribute<WebGetAttribute>();
+                        ImplementServiceMethod(baseUrl, typeBuilder, method, webInvokeAttr, webGetAttr);
+                    }
+                    else
+                    {
+                        throw new Exception("Service interface has to be marked with correct method attribute!");
+                    }
+                }
+                var type = typeBuilder.CreateType();
+                assembly.Save(assemblyName);
+                return (T)Activator.CreateInstance(type);
+            }
+            return null;
+        }
+
+        private static void ImplementServiceMethod(string baseUrl, TypeBuilder typeBuilder, MethodInfo method,
+            WebInvokeAttribute webInvokeAttr, WebGetAttribute webGetAttr)
+        {
+            var parameterTypes = method.GetParameters().Select(p => p.ParameterType).ToArray();
+            var methodBuilder = typeBuilder.DefineMethod(method.Name, method.Attributes ^ MethodAttributes.Abstract,
+                 method.CallingConvention, method.ReturnType,
+                 parameterTypes);
+            var il = methodBuilder.GetILGenerator();
+            var serviceCallMethod = typeof(ProxyGenerator).GetMethod("BaseServiceCall",
+                BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(parameterTypes[0], method.ReturnType);
+
+            var url = baseUrl;
+            if (webGetAttr != null)
+            {
+                url = baseUrl + "?" + parameterTypes[0].Name + "=";
+            }
+
+            il.Emit(OpCodes.Ldstr, url);
+            il.Emit(OpCodes.Ldstr, webGetAttr != null ? "GET" : "POST");
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Call, serviceCallMethod);
+            il.Emit(OpCodes.Ret);
+        }
+
+        public static TReturn BaseServiceCall<TParam, TReturn>(string url, string method, TParam param)
+        {
+            using (var client = new HttpClient(new HttpClientHandler()))
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                var serializeObject = JsonConvert.SerializeObject(param);
+                var stringContent = new StringContent(serializeObject, Encoding.UTF8, "application/json");
+                Task<HttpResponseMessage> call;
+                if (method == "POST")
+                {
+                    call = client.PostAsync(url, stringContent);
+                }
+                else
+                {
+                    call = client.GetAsync(url + param);
+                }
+                var result = call.Result.Content;
+                return (TReturn)JsonConvert.DeserializeObject(result.ReadAsStringAsync().Result, typeof(TReturn));
+            }
+        }
+
         public static T PropertyChangedProxy<T>() where T : class, new()
         {
             var type = typeof(T);

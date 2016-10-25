@@ -26,7 +26,7 @@ namespace TestApp
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public ICommand CallService => _callService ?? (_callService = new Command(OnCallService));
+        public ICommand CallService => _callService ?? (_callService = new Command(OnCallService2));
         public int First { get; set; }
         public ICommand Increment => _increment ?? (_increment = new Command(OnIncrement));
         public MainModel Model { get; set; }
@@ -73,6 +73,16 @@ namespace TestApp
                 {
                 }
             }
+        }
+
+        private void OnCallService2()
+        {
+            var serviceProxy = ProxyGenerator.ServiceProxy<IService>("http://localhost:8081/add");
+            Sum = serviceProxy.Add(new AddRequest
+            {
+                FirstNumber = First,
+                SecondNumber = Second,
+            });
         }
 
         private void OnIncrement()

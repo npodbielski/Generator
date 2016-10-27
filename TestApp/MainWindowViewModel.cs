@@ -1,12 +1,13 @@
-﻿using Generator;
-using Newtonsoft.Json;
-using Service;
+using System;
 using System.ComponentModel;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
+using Generator;
+using Newtonsoft.Json;
+using Service;
 
 namespace TestApp
 {
@@ -24,8 +25,6 @@ namespace TestApp
             Model = test;
             test.IntValue = 2;
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         public ICommand CallEcho => _callEcho ?? (_callEcho = new Command(OnCallEcho));
         public ICommand CallService => _callService ?? (_callService = new Command(OnCallService2));
@@ -60,6 +59,8 @@ namespace TestApp
             }
         }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -92,7 +93,7 @@ namespace TestApp
                     var result = call.Result.Content;
                     Sum = (int)JsonConvert.DeserializeObject(result.ReadAsStringAsync().Result, typeof(int));
                 }
-                catch (System.Exception)
+                catch (Exception)
                 {
                 }
             }
@@ -104,7 +105,7 @@ namespace TestApp
             Sum = serviceProxy.Add(new AddRequest
             {
                 FirstNumber = First,
-                SecondNumber = Second,
+                SecondNumber = Second
             });
         }
 

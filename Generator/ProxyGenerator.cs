@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -89,8 +88,9 @@ namespace Generator
                 var name = new AssemblyName(assemblyName);
                 var assembly = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
                 var module = assembly.DefineDynamicModule(assemblyName, fileName);
-                var implemntationName = serviceInterface.Name.StartsWith("I") ?
-                    serviceInterface.Name.Substring(1) : serviceInterface.Name;
+                var implemntationName = serviceInterface.Name.StartsWith("I")
+                    ? serviceInterface.Name.Substring(1)
+                    : serviceInterface.Name;
                 var typeBuilder = module.DefineType(implemntationName + "Proxy",
                     TypeAttributes.Class | TypeAttributes.Public);
                 typeBuilder.AddInterfaceImplementation(serviceInterface);
@@ -123,9 +123,9 @@ namespace Generator
                 ibaseMethod.Attributes ^ MethodAttributes.Abstract,
                 ibaseMethod.CallingConvention,
                 ibaseMethod.ReturnType,
-                new[] { typeof(PropertyChangedEventHandler) });
+                new[] {typeof(PropertyChangedEventHandler)});
             var generator = addMethod.GetILGenerator();
-            var combine = typeof(Delegate).GetMethod("Combine", new[] { typeof(Delegate), typeof(Delegate) });
+            var combine = typeof(Delegate).GetMethod("Combine", new[] {typeof(Delegate), typeof(Delegate)});
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Ldfld, field);
@@ -143,10 +143,10 @@ namespace Generator
             var methodBuilder = typeBuilder.DefineMethod("OnPropertyChanged",
                 MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig |
                 MethodAttributes.NewSlot, typeof(void),
-                new[] { typeof(string) });
+                new[] {typeof(string)});
             var generator = methodBuilder.GetILGenerator();
             var returnLabel = generator.DefineLabel();
-            var propertyArgsCtor = typeof(PropertyChangedEventArgs).GetConstructor(new[] { typeof(string) });
+            var propertyArgsCtor = typeof(PropertyChangedEventArgs).GetConstructor(new[] {typeof(string)});
             generator.DeclareLocal(typeof(PropertyChangedEventHandler));
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Ldfld, field);
@@ -170,7 +170,7 @@ namespace Generator
             var methodBuilder = typeBuilder.DefineMethod("OnPropertyChanged",
                 MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig |
                 MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(void),
-                new[] { typeof(string) });
+                new[] {typeof(string)});
             var generator = methodBuilder.GetILGenerator();
             var returnLabel = generator.DefineLabel();
             generator.DeclareLocal(typeof(PropertyChangedEventHandler));
@@ -188,8 +188,10 @@ namespace Generator
         private static MethodBuilder ImplementPropertyChanged(TypeBuilder typeBuilder)
         {
             typeBuilder.AddInterfaceImplementation(typeof(INotifyPropertyChanged));
-            var field = typeBuilder.DefineField("PropertyChanged", typeof(PropertyChangedEventHandler), FieldAttributes.Private);
-            var eventInfo = typeBuilder.DefineEvent("PropertyChanged", EventAttributes.None, typeof(PropertyChangedEventHandler));
+            var field = typeBuilder.DefineField("PropertyChanged", typeof(PropertyChangedEventHandler),
+                FieldAttributes.Private);
+            var eventInfo = typeBuilder.DefineEvent("PropertyChanged", EventAttributes.None,
+                typeof(PropertyChangedEventHandler));
             //var methodBuilder = ImplementOnPropertyChangedHelper(typeBuilder, field, eventInfo);
             var methodBuilder = ImplementOnPropertyChanged(typeBuilder, field, eventInfo);
             ImplementAddEvent(typeBuilder, field, eventInfo);
@@ -204,8 +206,8 @@ namespace Generator
                 ibaseMethod.Attributes ^ MethodAttributes.Abstract,
                 ibaseMethod.CallingConvention,
                 ibaseMethod.ReturnType,
-                new[] { typeof(PropertyChangedEventHandler) });
-            var remove = typeof(Delegate).GetMethod("Remove", new[] { typeof(Delegate), typeof(Delegate) });
+                new[] {typeof(PropertyChangedEventHandler)});
+            var remove = typeof(Delegate).GetMethod("Remove", new[] {typeof(Delegate), typeof(Delegate)});
             var generator = removeMethod.GetILGenerator();
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Ldarg_0);
@@ -219,12 +221,12 @@ namespace Generator
         }
 
         private static void ImplementServiceMethod(string baseUrl, TypeBuilder typeBuilder, MethodInfo method,
-                                                    WebInvokeAttribute webInvokeAttr, WebGetAttribute webGetAttr)
+            WebInvokeAttribute webInvokeAttr, WebGetAttribute webGetAttr)
         {
             var parameterTypes = method.GetParameters().Select(p => p.ParameterType).ToArray();
             var methodBuilder = typeBuilder.DefineMethod(method.Name, method.Attributes ^ MethodAttributes.Abstract,
-                    method.CallingConvention, method.ReturnType,
-                    parameterTypes);
+                method.CallingConvention, method.ReturnType,
+                parameterTypes);
             var il = methodBuilder.GetILGenerator();
             var serviceCallMethod = typeof(ProxyGenerator).GetMethod("BaseServiceCall",
                 BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(parameterTypes[0], method.ReturnType);

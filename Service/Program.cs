@@ -18,7 +18,7 @@ namespace Service
                     DefaultOutgoingResponseFormat = WebMessageFormat.Json,
                     FaultExceptionEnabled = true
                 };
-                serviceHost.Description.Behaviors.Add(new ServiceMetadataBehavior { HttpGetEnabled = true });
+                serviceHost.Description.Behaviors.Add(new ServiceMetadataBehavior {HttpGetEnabled = true});
                 var e = serviceHost.AddServiceEndpoint(typeof(IService), new WebHttpBinding(), "");
                 e.Behaviors.Add(seb);
                 serviceHost.Open();

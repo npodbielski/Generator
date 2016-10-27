@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -53,14 +54,16 @@ namespace Generator
             foreach (var item in propertyInfos)
             {
                 var baseMethod = item.GetGetMethod();
-                var getAccessor = typeBuilder.DefineMethod(baseMethod.Name, baseMethod.Attributes, item.PropertyType, null);
+                var getAccessor = typeBuilder.DefineMethod(baseMethod.Name, baseMethod.Attributes, item.PropertyType,
+                    null);
                 var il = getAccessor.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
                 il.EmitCall(OpCodes.Call, baseMethod, null);
                 il.Emit(OpCodes.Ret);
                 typeBuilder.DefineMethodOverride(getAccessor, baseMethod);
                 baseMethod = item.GetSetMethod();
-                var setAccessor = typeBuilder.DefineMethod(baseMethod.Name, baseMethod.Attributes, typeof(void), new[] { item.PropertyType });
+                var setAccessor = typeBuilder.DefineMethod(baseMethod.Name, baseMethod.Attributes, typeof(void),
+                    new[] {item.PropertyType});
                 il = setAccessor.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldarg_1);
@@ -220,8 +223,8 @@ namespace Generator
         {
             var parameterTypes = method.GetParameters().Select(p => p.ParameterType).ToArray();
             var methodBuilder = typeBuilder.DefineMethod(method.Name, method.Attributes ^ MethodAttributes.Abstract,
-                 method.CallingConvention, method.ReturnType,
-                 parameterTypes);
+                    method.CallingConvention, method.ReturnType,
+                    parameterTypes);
             var il = methodBuilder.GetILGenerator();
             var serviceCallMethod = typeof(ProxyGenerator).GetMethod("BaseServiceCall",
                 BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(parameterTypes[0], method.ReturnType);

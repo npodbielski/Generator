@@ -34,48 +34,48 @@
                     VerticalAlignment="Center">
             <TextBlock Text="Service proxy test" FontWeight="Bold" />
             <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="30" />
-                        <RowDefinition Height="20" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                    </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30" />
+                    <RowDefinition Height="20" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Grid.Row="0" Text="First arg" />
                 <TextBlock Grid.Column="1" Grid.Row="0" Text="Second arg" />
                 <TextBox Grid.Column="0"
                              Grid.Row="1" x:Name="First" Width="100" Text="{Binding First}" />
-                    <TextBox Grid.Column="1"
+                <TextBox Grid.Column="1"
                              Grid.Row="1"
                              x:Name="Second" Width="100" Text="{Binding Second}" />
-                </Grid>
-                <TextBlock x:Name="Sum" Text="{Binding Sum}" />
-            </StackPanel>
-            <StackPanel HorizontalAlignment="Center" Grid.Row="1"
+            </Grid>
+            <TextBlock x:Name="Sum" Text="{Binding Sum}" />
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Center" Grid.Row="1"
                         Grid.Column="1"
                     VerticalAlignment="Center">
-                <Button Command="{Binding CallService}" 
+            <Button Command="{Binding CallService}" 
                     Content="Call Add" Padding="10" />
-            </StackPanel>
-            <Grid Grid.Row="2" Grid.Column="1"
+        </StackPanel>
+        <Grid Grid.Row="2" Grid.Column="1"
                         HorizontalAlignment="Center"
                     VerticalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="100"  />
-                    <ColumnDefinition Width="100"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Param:" />
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EchoParam}" />
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Result:" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Echo}" />
-                <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Call Test" Command="{Binding CallEcho}" />
-            </Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100"  />
+                <ColumnDefinition Width="100"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Param:" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EchoParam}" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Result:" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Echo}" />
+            <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Call Test" Command="{Binding CallEcho}" />
+        </Grid>
     </Grid>
 </Window>
 
